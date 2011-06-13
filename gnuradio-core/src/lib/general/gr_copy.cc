@@ -36,7 +36,7 @@ gr_make_copy(size_t itemsize)
 
 gr_copy::gr_copy(size_t itemsize)
   : gr_block ("copy",
-	      gr_make_io_signature (1, 1, itemsize),
+	      gr_make_io_signature2 (1, 2, itemsize, sizeof(char)),
 	      gr_make_io_signature (1, 1, itemsize)),
     d_itemsize(itemsize),
     d_enabled(true)
@@ -46,7 +46,7 @@ gr_copy::gr_copy(size_t itemsize)
 bool
 gr_copy::check_topology(int ninputs, int noutputs)
 {
-  return ninputs == noutputs;
+  return ninputs == noutputs || ninputs  == noutputs + 1;
 }
 
 int
@@ -57,13 +57,34 @@ gr_copy::general_work(int noutput_items,
 {
   const uint8_t *in = (const uint8_t *) input_items[0];
   uint8_t *out = (uint8_t *) output_items[0];
+  int n, j;
 
-  int n = std::min<int>(ninput_items[0], noutput_items);
-  int j = 0;
+  if(input_items.size() == 1) { //if only one input, do as original gr_copy
 
-  if (d_enabled) {
-    memcpy(out, in, n*d_itemsize);
-    j = n;
+    n = std::min<int>(ninput_items[0], noutput_items);
+    j = 0;
+
+    if (d_enabled) {
+      memcpy(out, in, n*d_itemsize);
+      j = n;
+    }
+  }
+  else {  //if two inputs, ignore enabled state, behave as new gr_copy
+    const uint8_t *ctrl_sig = (const uint8_t *) input_items[1];
+    j = 0;
+    n = std::min<int>(ninput_items[0], ninput_items[1]);
+    n = std::min<int>(n, noutput_items);
+  
+    for(int ii = 0; ii < n; ii++) {
+      if(*ctrl_sig) {                 //check control signal, if not zero copy out
+        memcpy(out, in, d_itemsize);  //copy to output
+        out += d_itemsize;            //advance output pointer
+        j++;
+      }
+      ctrl_sig++;                     //advance control signal pointer
+      in += d_itemsize;               //advance input pointer
+    }
+
   }
 
   consume_each(n);
