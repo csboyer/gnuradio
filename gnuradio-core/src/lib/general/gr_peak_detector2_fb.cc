@@ -42,7 +42,8 @@ gr_peak_detector2_fb::gr_peak_detector2_fb (float threshold_factor_rise,
 		   gr_make_io_signature (1, 1, sizeof(float)),
 		   gr_make_io_signature2 (1, 2, sizeof(char), sizeof(float))),
     d_threshold_factor_rise(threshold_factor_rise), 
-    d_look_ahead(look_ahead), d_alpha(alpha), d_avg(0.0f), d_found(false)
+    d_look_ahead(look_ahead), d_alpha(alpha), d_avg(0.0f), d_found(false),
+    d_bootup_count(0), d_bootup_thresh(50), d_bootup(false)
 {
 }
 
@@ -61,11 +62,16 @@ gr_peak_detector2_fb::work (int noutput_items,
 
     if (!d_found) {
       // Have not yet detected presence of peak
-      if (iptr[i] > d_avg * (1.0f + d_threshold_factor_rise)) {
+      if (iptr[i] > d_avg * (1.0f + d_threshold_factor_rise) && d_bootup) {
 	d_found = true;
 	d_look_ahead_remaining = d_look_ahead;
         d_peak_val = -(float)INFINITY;
-      } 
+      }
+      else if(!d_bootup) {
+          d_bootup = d_bootup_count > d_bootup_thresh;
+          d_bootup_count++;
+	      d_avg = d_alpha*iptr[i] + (1.0f - d_alpha)*d_avg;
+      }
       else {
 	d_avg = d_alpha*iptr[i] + (1.0f - d_alpha)*d_avg;
       }

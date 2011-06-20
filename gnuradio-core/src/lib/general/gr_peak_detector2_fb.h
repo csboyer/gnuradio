@@ -65,6 +65,10 @@ private:
   float d_alpha;
   float d_avg;
   bool d_found;
+
+  int d_bootup_count;
+  int d_bootup_thresh;
+  bool d_bootup;
   
 public:
   
