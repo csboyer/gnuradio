@@ -118,7 +118,7 @@ propagate_tags(gr_block::tag_propagation_policy_t policy, gr_block_detail *d,
       else {
 	for(t = rtags.begin(); t != rtags.end(); t++) {
 	  uint64_t newcount = pmt::pmt_to_uint64(pmt::pmt_tuple_ref(*t, 0));
-	  pmt::pmt_t newtup = pmt::mp(pmt::pmt_from_uint64(newcount * rrate),
+	  pmt::pmt_t newtup = pmt::mp(pmt::pmt_from_uint64(ceil(newcount * rrate)),
 				      pmt::pmt_tuple_ref(*t, 1),
 				      pmt::pmt_tuple_ref(*t, 2),
 				      pmt::pmt_tuple_ref(*t, 3));
